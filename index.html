@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CampusBuddy - Amrita Coimbatore</title>
+<style>
+  :root{--ink:#1f2937;--paper:#f6f8fb;--brand:#0f766e;--dark:#115e59;--line:#dbe3ec}
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;background:var(--paper);color:var(--ink);display:flex;justify-content:center}
+  .app{width:100%;max-width:680px;height:100%;display:flex;flex-direction:column;background:#fff;border-left:1px solid var(--line);border-right:1px solid var(--line)}
+  header{padding:14px 18px;background:var(--brand);color:#fff}
+  header h1{margin:0;font-size:1.3rem}
+  header p{margin:4px 0 0;font-size:.88rem;opacity:.92}
+  #chat{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--paper)}
+  .msg{max-width:86%;padding:10px 14px;border-radius:14px;line-height:1.5;font-size:.96rem;white-space:pre-line}
+  .bot{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:4px}
+  .me{align-self:flex-end;background:var(--brand);color:#fff;border-bottom-right-radius:4px}
+  #chips{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px;border-top:1px solid var(--line)}
+  .chip{border:1px solid var(--brand);background:#fff;color:var(--dark);padding:7px 12px;border-radius:999px;font:inherit;font-size:.84rem;cursor:pointer}
+  .chip:hover{background:#e6f4f2}
+  #bar{display:flex;gap:8px;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
+  #q{flex:1;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:1rem}
+  #send{padding:0 18px;border:0;border-radius:10px;background:var(--brand);color:#fff;font:inherit;font-weight:700;cursor:pointer}
+  button:focus-visible,input:focus-visible{outline:3px solid #f59e0b;outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header><h1>CampusBuddy</h1><p>Amrita Vishwa Vidyapeetham, Coimbatore. Ask me about your campus.</p></header>
+  <div id="chat" aria-live="polite"></div>
+  <div id="chips"></div>
+  <div id="bar">
+    <input id="q" type="text" placeholder="Type your question..." autocomplete="off" aria-label="Your question">
+    <button id="send">Ask</button>
+  </div>
+</div>
+
+<script>
+/* ===== KNOWLEDGE BASE: t = topic name, k = ways students ask, a = reply ===== */
+const kb = [
+/* ---- Timings ---- */
+{t:"Library timings", k:["library","library open","library close","reading hall","reading room"],
+ a:"Central Library: 8:00 AM to 10:00 PM on working days. Sunday: 9:00 AM to 1:00 PM. Reading halls often stay open later during mid-term and end-semester exam weeks."},
+{t:"Administrative and exam office timings", k:["admin office","office","exam office","administrative office","office open","office close","office hours"],
+ a:"Administrative and Exam Offices: 8:45 AM to 5:00 PM, Monday to Saturday. Closed on regional holidays and second Saturdays."},
+{t:"Certificate and transcript collection", k:["certificate","transcript","collect certificate","collect transcript","bonafide","marksheet"],
+ a:"Certificates and transcripts are given only in two slots:\n10:00 AM - 12:00 PM (forenoon)\n2:00 PM - 4:00 PM (afternoon)"},
+{t:"Mess timings", k:["mess","mess timing","breakfast","lunch","dinner","snacks","evening snacks","food timing","hostel food"],
+ a:"Hostel mess serves pure vegetarian meals only:\nBreakfast: 7:00 - 9:00 AM\nLunch: 12:00 - 2:00 PM\nEvening snacks: 4:30 - 5:30 PM\nDinner: 7:30 - 9:00 PM"},
+{t:"Girls hostel curfew", k:["girls curfew","girls hostel curfew","girls hostel timing","girls hostel gate","ladies hostel","girl curfew"],
+ a:"Girls' hostel curfew is strictly 7:30 PM (it can change slightly with each year's handbook). Biometric in/out registers are used at the gates."},
+{t:"Boys hostel curfew", k:["boys curfew","boys hostel curfew","boys hostel timing","boys hostel gate","boy curfew"],
+ a:"Boys' hostel curfew ranges from 8:30 PM to 10:00 PM. Biometric in/out registers are used at the gates."},
+{t:"Silent hours", k:["silent hours","silent hour","quiet hours","noise"],
+ a:"Silent hours are 11:00 PM to 5:30 AM across all residential areas on campus."},
+/* ---- Hostel ---- */
+{t:"Hostel rooms and banned items", k:["hostel room","room sharing","bhavanam","appliance","induction","kettle","iron box","speaker","allowed hostel","not allowed hostel","hostel accommodation"],
+ a:"Hostel rooms (Bhavanams) are usually 4-sharing. Heavy electrical items are not allowed: induction stoves, electric kettles, iron boxes, and large speaker systems."},
+{t:"Girls hostels", k:["girls hostel","girls hostels","adithi","mythili","anasuya","girls bhavanam"],
+ a:"Girls' hostels (for example Adithi, Mythili, Anasuya Bhavanams) are clustered together near the rear academic sector of the campus."},
+{t:"Boys hostels", k:["boys hostel","boys hostels","vyas","gargi","nachiketa","agastya","boys bhavanam"],
+ a:"Boys' hostels (for example Vyas, Gargi, Nachiketa, Agastya Bhavanams) are along the residential ring road."},
+/* ---- Academics ---- */
+{t:"Schools and departments", k:["school","schools","department","departments","school of computing","school of engineering","agriculture","mass communication"],
+ a:"Schools on this campus: School of Engineering, School of Computing, School of Business (ASB), Department of Mass Communication, and School of Agricultural Sciences."},
+{t:"Courses and programs", k:["course","courses","program","programs","btech","b tech","mtech","mba","msc","phd","branches","branch","cse","ai course"],
+ a:"Programs: B.Tech (Computer Science, Artificial Intelligence, Electronics & Communication, Mechanical, Electrical, Civil), M.Tech, MBA, Integrated M.Sc., and Ph.D."},
+{t:"University contact details", k:["contact","phone number","phone","email","switchboard","address","college address","helpline","college contact"],
+ a:"Central Switchboard: +91 422 268 5000\nEmail: univhq@amrita.edu\nAddress: Amrita Vishwa Vidyapeetham, Amritanagar P.O., Ettimadai, Coimbatore, Tamil Nadu - 641112."},
+/* ---- Rules ---- */
+{t:"Attendance and FA grade", k:["attendance","75 percent","fa grade","attendance shortage","minimum attendance","detained","low attendance"],
+ a:"B.Tech students need at least 75% attendance in each course. Postgraduate programs often need up to 90%. Below that you get an 'FA' grade (failure due to attendance shortage). You cannot write the exam and must re-register for the course in summer or a later semester."},
+{t:"Dress code and uniform", k:["dress code","uniform","dress","clothes","id card","shorts","casual dress","what to wear"],
+ a:"Uniform is compulsory Monday to Friday for undergraduates. Casual dress is allowed on Saturdays and special events, but modest dressing applies (no shorts, capris, sleeveless tops, or graphic t-shirts). Wear your ID card visibly at all times."},
+{t:"Exam rules", k:["exam rules","exam hall","malpractice","leave exam hall","restroom exam","exam protocol","university exam","exam instructions","bio break"],
+ a:"Zero tolerance for malpractice. In university exams you must stay for at least half of the exam duration before leaving. No restroom breaks are allowed once the exam starts."},
+{t:"Missed mid-term exam", k:["missed mid term","missed midterm","absent mid term","mid term absent","re test","retest","medical certificate","leave application","miss exam"],
+ a:"If you miss a mid-term because of a medical emergency, submit a medical certificate and leave application to your Department Chairperson within 5 working days to be considered for a re-test."},
+/* ---- Campus layout ---- */
+{t:"Room numbering system", k:["room number","room numbering","address system","ab3 204","how to read room","block floor room"],
+ a:"Rooms use [Block]-[Floor][Room]. Example: AB3-204 means Academic Block 3, 2nd floor, room 04."},
+{t:"Academic Block 1 (AB1)", k:["ab1","academic block 1","mechanical","civil","electrical","workshop"],
+ a:"AB1 has the core engineering branches (Mechanical, Civil, Electrical), workshops, and heavy engineering labs."},
+{t:"Academic Block 2 (AB2)", k:["ab2","academic block 2","ece","electronics","conference hall","admin wing"],
+ a:"AB2 houses Electronics and Communication Engineering (ECE), the university conference halls, and the main administrative wing."},
+{t:"Academic Block 3 (AB3)", k:["ab3","academic block 3","computer lab","computer labs","it department"],
+ a:"AB3 is the main hub of the School of Computing (CSE, IT) and has the large computer labs."},
+{t:"Academic Block 4 (AB4)", k:["ab4","academic block 4","first year","freshers","basic science","ai department"],
+ a:"AB4 is the newest and biggest block. It has first-year classrooms, basic sciences, and the Artificial Intelligence departments."},
+{t:"CIR building", k:["cir","cir building","corporate and industry relations","interview room","placement cell"],
+ a:"The CIR (Corporate & Industry Relations) building is near the main entrance loop. It has the placement cell and interview rooms."},
+{t:"ASB building", k:["asb","school of business","business school","mba block","amrita school of business"],
+ a:"ASB (Amrita School of Business) is a standalone building for MBA studies."},
+/* ---- Directions ---- */
+{t:"AB2 to AB4", k:["ab2 ab4","ab2 to ab4"],
+ a:"AB2 to AB4: Exit the main porch of AB2 and turn right onto the main paved academic road. Walk straight with AB1 on your right and AB3 on your left. Continue down the rear tech corridor. AB4 is the big modern building straight ahead.\nAbout 5-7 minutes (~450 m)."},
+{t:"AB4 to AB2", k:["ab4 ab2","ab4 to ab2"],
+ a:"AB4 to AB2: Exit the front entrance of AB4 and walk straight down the main academic avenue. Pass AB3 on your right and AB1 on your left. AB2 is straight ahead, next to the administrative hub.\nAbout 5-7 minutes."},
+{t:"AB1 to AB3", k:["ab1 ab3","ab1 to ab3"],
+ a:"AB1 to AB3: Exit the front portico of AB1, turn right onto the Academic Main Avenue sidewalk, and walk about 50 m. AB3 is the big building on your left.\nAbout 1 minute (~80 m)."},
+{t:"AB3 to AB4", k:["ab3 ab4","ab3 to ab4"],
+ a:"AB3 to AB4: Exit the main atrium of AB3, turn left onto the avenue (towards the mountains), and walk straight past the end of AB3. AB4 is the large modern building straight ahead.\nAbout 3 minutes (~250 m)."},
+{t:"AB1 to AB2", k:["ab1 ab2","ab1 to ab2"],
+ a:"AB1 to AB2: Outdoors, exit the AB1 porch, turn left, and walk about 60 m. AB2 is on your left.\nRainy day shortcut: use the ground floor corridor at the back wings of AB1 and go through the glass doors; they open into AB2's ground floor.\nAbout 1 minute."},
+{t:"CIR to AB3", k:["cir ab3","cir to ab3"],
+ a:"CIR to AB3: Exit the CIR porch, turn left, and walk down the shaded pedestrian boulevard. Pass AB2 and AB1 on your right. AB3 is the large block on your left.\nAbout 3-4 minutes."},
+{t:"ASB to engineering blocks", k:["asb ab1","asb ab2","asb ab3","asb to ab1","asb to ab2","asb to ab3","asb to engineering"],
+ a:"ASB to AB1/AB2/AB3: Exit the ASB courtyard, walk past the central lawn, and cross the main avenue. You will reach the plaza between AB2 (left) and AB1/AB3 (right).\nAbout 2 minutes (~150 m)."},
+{t:"Way to the shopping complex", k:["shopping complex","shopping","stationary","juice shop","food stalls","shop","a2b","adyar ananda bhavan","canteen","canteens","a2b canteen"],
+ a:"From AB1/AB3: Step onto the Academic Main Avenue, take the wide pedestrian path going away from the mountains, and keep the sports fields on your right. The Shopping Complex (food stalls, juice shops, stationery) is straight ahead. About 4 minutes (~300 m).\nFrom AB4: Exit the porch, turn right, and walk along the fence path behind AB3. Take the walkway beside the basketball and tennis courts. It brings you to the side entrance of the Shopping Complex and the A2B dining area. About 5 minutes (~400 m)."},
+{t:"Girls hostel to AB4", k:["girls hostel ab4","girls hostel to ab4","hostel to ab4"],
+ a:"Girls' hostels to AB4: Leave through the main gate of the Girls' Hostel Complex, turn left onto the internal residential walkway, and it leads to the rear/side plaza of AB4.\nAbout 3-4 minutes (~200 m)."},
+{t:"Girls hostel to AB1, AB2, AB3", k:["girls hostel ab3","girls hostel ab1","girls hostel ab2","girls hostel to ab3","girls hostel to ab1","girls hostel to ab2","girls hostel to academic block"],
+ a:"Girls' hostels to AB3/AB1/AB2: Leave the main gate, walk straight past the side of AB4, then continue down the Academic Main Avenue. You reach AB3 first (on your right), then AB1 and AB2.\nAbout 6-8 minutes (~500-600 m)."},
+{t:"Boys hostel to academic blocks", k:["boys hostel ab1","boys hostel ab3","boys hostel to academic","boys hostel to ab1","boys hostel to ab3","boys hostel to class","hostel to class"],
+ a:"Boys' hostels to the academic blocks: Exit your Bhavanam gate onto the Residential Ring Road and walk towards the campus centre with the sports fields on your left. Pass the Shopping Complex and continue to the Central Library Lawn. Cross the road to reach AB1 or AB3.\nAbout 7-10 minutes (~600-800 m). Vyas is closest; Agastya and Nachiketa take the longest."},
+{t:"Way to the library", k:["way to library","reach library","where is library","library location","library direction"],
+ a:"The Central Library is the large glass-and-concrete building in the middle of the campus, opposite the AB2 administrative zone and across the road from AB1. Head to the central grass lawn; the entrance faces the lawn. About 1-3 minutes from any core block."},
+{t:"Way to main gate and CIR", k:["main gate","main entrance","gate","security gate","way to cir","atm","bank"],
+ a:"From AB2, walk down the Academic Main Avenue away from the mountains (south). Pass the ATM extension and the security check post lane. CIR will be on your left, and the Main University Security Gate (towards Ettimadai station and the highway) is straight ahead.\nAbout 5 minutes (~400 m)."},
+{t:"Campus navigation tips", k:["navigation","directions","campus map","landmark","mountains","academic main avenue","how to find","lost"],
+ a:"Campus tips: All four academic blocks (AB1-AB4) sit along one long road called the Academic Main Avenue. The Western Ghats mountains are on the north/west. Walking towards the mountains takes you to AB4, the sports fields, and back-campus. Walking with the mountains behind you takes you to the Main Gate, CIR, and the highway.\nTell me 'from [place] to [place]' (for example, AB2 to AB4) and I will give the walking route."},
+/* ---- Student life ---- */
+{t:"Clubs", k:["club","clubs","team shakti","codechef","biosecure","raga","natya","literary","photography","music club","dance club","technical club","cultural club"],
+ a:"Technical clubs: coding and security groups such as Team Shakti, CodeChef, and Biosecure.\nCultural clubs: Raga (music), Natya (dance), Literary, and Photography."},
+{t:"Events and festivals", k:["event","events","fest","festival","anokha","techfest","onam","pongal","ugadi","celebration"],
+ a:"Anokha is the big national-level tech fest. Regional cultural festivals such as Onam, Pongal, and Ugadi are celebrated with large campus-wide gatherings."},
+{t:"Placements", k:["placement","placements","recruiter","recruiters","companies","job","jobs","microsoft","amazon","cisco","tcs","infosys","soft skills","aptitude"],
+ a:"Placements are handled by Corporate & Industry Relations (CIR). Training in soft skills, quantitative aptitude, and data structures (with compulsory credits) starts in the second year. Major recruiters include Microsoft, Amazon, Cisco, TCS, and Infosys."},
+/* ---- Travel ---- */
+{t:"By train", k:["train","railway","railway station","ettimadai station","etmd","memu","coimbatore junction","palakkad"],
+ a:"Ettimadai Railway Station (ETMD) is only 500 m from the campus gate (5-minute walk). Local passenger/MEMU trains between Coimbatore Junction and Palakkad stop there. Long-distance trains end at Coimbatore Junction (CBE), 18 km away."},
+{t:"By bus", k:["bus","bus route","a3","bus number","town bus","ettimadai pirivu","highway","auto","bus stop"],
+ a:"Direct: Bus Route A3 runs from the city terminals to the university main gate. Other frequent lines: 96, 48, S2, and 3G.\nTown buses also stop at Ettimadai Pirivu on the Coimbatore-Palakkad Highway (NH 47), 3 km from the gates. Autos are easy to find at the junction."},
+{t:"By air", k:["airport","flight","air","cjb","taxi","cab","ola","uber"],
+ a:"Coimbatore International Airport (CJB) is about 27-31 km away. Take a pre-paid taxi or an app cab (Ola/Uber) via the highway. It takes about 45-50 minutes."}
+];
+
+const noAnswer = "I don't have that info, please contact the college office.";
+const chipsList = ["What time does the library close?","How do I go from AB2 to AB4?","What is the attendance rule?","How to reach campus by train?"];
+
+/* ===== Matching ===== */
+const stop = new Set("the a an is are was what when where how do does did i my me to from of in on at for and can you please tell about time timing timings there any which who go get way reach much many this that it with be".split(" "));
+const stem = w => w.length > 3 ? w.replace(/s$/, "") : w;
+const tok = s => s.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter(w => w && !stop.has(w)).map(stem);
+
+kb.forEach(e => { e.kt = e.k.map(tok).filter(x => x.length); e.tt = tok(e.t); });
+
+function findAnswer(text){
+  const q = tok(text), qs = " " + q.join(" ") + " ";
+  let best = null, top = 0;
+  for (const e of kb){
+    let s = 0;
+    for (const kw of e.kt){
+      if (kw.length > 1){ if (qs.includes(" " + kw.join(" ") + " ")) s += 3 + kw.length; }
+      else if (q.includes(kw[0])) s += 2;
+    }
+    for (const w of e.tt) if (q.includes(w)) s += 1;
+    if (s > top){ top = s; best = e; }
+  }
+  if (best && top >= 2) return best.a;
+  if (best && top === 1) return "I'm not sure. Did you mean: " + best.t + "?";
+  return noAnswer;
+}
+
+/* ===== Chat UI ===== */
+const chat = document.getElementById("chat"), input = document.getElementById("q"), chips = document.getElementById("chips");
+function add(text, who){
+  const d = document.createElement("div");
+  d.className = "msg " + who; d.textContent = text;
+  chat.appendChild(d); chat.scrollTop = chat.scrollHeight;
+}
+function ask(text){
+  text = text.trim(); if (!text) return;
+  add(text, "me"); input.value = "";
+  setTimeout(() => add(findAnswer(text), "bot"), 300);
+}
+chipsList.forEach(s => {
+  const b = document.createElement("button");
+  b.className = "chip"; b.textContent = s; b.onclick = () => ask(s);
+  chips.appendChild(b);
+});
+document.getElementById("send").onclick = () => ask(input.value);
+input.addEventListener("keydown", e => { if (e.key === "Enter") ask(input.value); });
+add("Hi! I'm CampusBuddy for Amrita Coimbatore. Ask about timings, hostels, exams, attendance, directions between blocks, clubs, placements, or how to reach the campus.", "bot");
+</script>
+</body>
+</html>
