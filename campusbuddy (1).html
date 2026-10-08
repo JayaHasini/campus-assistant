@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CampusBuddy</title>
+<style>
+  :root{
+    --ink:#1f2937; --paper:#f6f8fb; --brand:#0f766e; --brand-dark:#115e59;
+    --bot:#ffffff; --user:#0f766e; --line:#dbe3ec; --muted:#64748b;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;background:var(--paper);color:var(--ink);display:flex;justify-content:center}
+  .app{position:relative;width:100%;max-width:640px;height:100%;display:flex;flex-direction:column;background:#fff;border-left:1px solid var(--line);border-right:1px solid var(--line)}
+  header{padding:16px 18px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  header h1{margin:0;font-size:1.3rem;letter-spacing:.2px}
+  header p{margin:4px 0 0;font-size:.9rem;opacity:.9}
+  #chat{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--paper)}
+  .msg{max-width:82%;padding:10px 14px;border-radius:14px;line-height:1.45;font-size:.97rem;white-space:pre-line}
+  .bot{align-self:flex-start;background:var(--bot);border:1px solid var(--line);border-bottom-left-radius:4px}
+  .me{align-self:flex-end;background:var(--user);color:#fff;border-bottom-right-radius:4px}
+  .links{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .maplink{display:inline-block;padding:6px 10px;border:1px solid var(--brand);border-radius:8px;color:var(--brand-dark);background:#f0faf8;text-decoration:none;font-size:.86rem;font-weight:700;white-space:normal}
+  .maplink:hover{background:#d9f0ec}
+  #chips{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px;border-top:1px solid var(--line);background:#fff}
+  .chip{border:1px solid var(--brand);background:#fff;color:var(--brand-dark);padding:7px 12px;border-radius:999px;font:inherit;font-size:.85rem;cursor:pointer}
+  .chip:hover{background:#e6f4f2}
+  #bar{display:flex;gap:8px;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);background:#fff}
+  #q{flex:1;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:1rem}
+  #send{padding:0 18px;border:0;border-radius:10px;background:var(--brand);color:#fff;font:inherit;font-weight:700;cursor:pointer}
+  #send:hover{background:var(--brand-dark)}
+  .chip.feature{background:var(--brand);color:#fff;font-weight:700}
+  .chip.feature:hover{background:var(--brand-dark)}
+  .guide{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  .guide .chip{border-radius:12px;text-align:left;line-height:1.3}
+  /* ---------- Emergency mode ---------- */
+  .sos-btn{flex:none;border:2px solid #fff;border-radius:10px;background:#b91c1c;color:#fff;font:inherit;font-weight:800;font-size:.9rem;letter-spacing:.4px;padding:10px 12px;cursor:pointer;animation:sosPulse 2.2s infinite}
+  .sos-btn:hover{background:#991b1b}
+  @keyframes sosPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.65)}50%{box-shadow:0 0 0 8px rgba(255,255,255,0)}}
+  @media (prefers-reduced-motion:reduce){.sos-btn{animation:none}}
+  .sos-panel{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;background:#fff}
+  .sos-panel[hidden]{display:none}
+  .sos-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;background:#b91c1c;color:#fff}
+  .sos-top h2{margin:0;font-size:1.2rem}
+  #sos-close{border:2px solid #fff;border-radius:8px;background:transparent;color:#fff;font:inherit;font-weight:700;padding:6px 12px;cursor:pointer}
+  #sos-close:hover{background:#991b1b}
+  .call112{display:block;margin:12px 16px 0;padding:14px;border-radius:12px;background:#b91c1c;color:#fff;text-align:center;font-weight:800;font-size:1.05rem;text-decoration:none}
+  .call112:hover{background:#991b1b}
+  .sos-tabs{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:12px 16px}
+  .sos-tab{border:2px solid #b91c1c;background:#fff;color:#7f1d1d;border-radius:10px;padding:10px 8px;font:inherit;font-weight:700;font-size:.9rem;cursor:pointer}
+  .sos-tab[aria-pressed="true"]{background:#b91c1c;color:#fff}
+  .sos-body{flex:1;overflow-y:auto;padding:0 16px 20px;display:flex;flex-direction:column;gap:10px;background:var(--paper);padding-top:12px}
+  .sos-body h3{margin:0;font-size:1.1rem;color:#7f1d1d}
+  .sos-card{background:#fff;border:1px solid var(--line);border-left:5px solid #b91c1c;border-radius:10px;padding:12px 14px}
+  .sos-card h4{margin:0 0 6px;font-size:.95rem}
+  .sos-card p{margin:0 0 8px;line-height:1.45;font-size:.93rem}
+  .sos-card ol{margin:0;padding-left:20px;line-height:1.5;font-size:.93rem}
+  .sos-card li{margin-bottom:4px}
+  .sos-row{display:flex;flex-wrap:wrap;gap:6px}
+  .sos-call{display:inline-block;padding:8px 12px;border-radius:8px;background:#b91c1c;color:#fff;text-decoration:none;font-weight:700;font-size:.9rem}
+  .sos-call:hover{background:#991b1b}
+  button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid #f59e0b;outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div>
+      <h1>CampusBuddy</h1>
+      <p>Ask me anything about the AVV Coimbatore campus.</p>
+    </div>
+    <button id="sos" class="sos-btn" type="button" aria-haspopup="dialog">&#128680; EMERGENCY</button>
+  </header>
+  <div id="chat" aria-live="polite"></div>
+  <div id="chips"></div>
+  <div id="bar">
+    <input id="q" type="text" placeholder="Type your question..." autocomplete="off" aria-label="Your question">
+    <button id="send">Ask</button>
+  </div>
+
+  <section id="sos-panel" class="sos-panel" role="dialog" aria-modal="true" aria-labelledby="sos-title" hidden>
+    <div class="sos-top">
+      <h2 id="sos-title">&#128680; Emergency help</h2>
+      <button id="sos-close" type="button" aria-label="Close emergency help">Close &#10005;</button>
+    </div>
+    <a id="call112" class="call112" href="tel:112">&#128222; Call 112</a>
+    <div id="sos-tabs" class="sos-tabs" role="group" aria-label="Type of emergency"></div>
+    <div id="sos-body" class="sos-body" aria-live="polite"></div>
+  </section>
+</div>
+
+<script>
+/* ============================================================
+   CAMPUS NAME  -  added to every Google Maps search so results
+   land inside your campus in Coimbatore.
+   ============================================================ */
+const CAMPUS = "Amrita Vishwa Vidyapeetham, Ettimadai, Coimbatore";
+
+/* ============================================================
+   KNOWLEDGE BASE  -  EDIT THIS PART WITH YOUR REAL CAMPUS FACTS
+   question : topic title
+   keywords : words students might type
+   answer   : what the bot replies
+   maps     : (optional) Google Maps links shown under the answer
+              { label: "Library" }                    -> searches "Library, <CAMPUS>"
+              { label: "Admin", search: "Admin Block" } -> searches a different phrase
+              { label: "Hostel", url: "https://maps.app.goo.gl/xxxx" } -> exact pin
+                (open the spot in Google Maps > Share > copy link, for best accuracy)
+   ============================================================ */
+const knowledgeBase = [
+  { question: "Library timings",
+    keywords: ["library","books","book","reading room","borrow","return books"],
+    answer: "The library is open from 9:00 AM to 8:00 PM, Monday to Saturday. It is closed on Sundays and public holidays. You can borrow up to 3 books for 14 days. The library is next to Block A.",
+    maps: [{ label: "Library" }] },
+  { question: "Mess / canteen timings",
+    keywords: ["mess","canteen","food","breakfast","lunch","dinner","snacks","eat"],
+    answer: "Mess timings:\nBreakfast: 7:30 - 9:00 AM\nLunch: 12:30 - 2:00 PM\nSnacks: 4:30 - 5:30 PM\nDinner: 7:30 - 9:00 PM",
+    maps: [{ label: "Canteen / Mess", search: "Canteen" }] },
+  { question: "Hostel rules",
+    keywords: ["hostel","room","curfew","warden","outing","visitors"],
+    answer: "Hostel gate closes at 9:00 PM. Students need written permission from the warden for late entry or overnight outings. Visitors are allowed only in the visitors' hall from 10 AM to 5 PM.",
+    maps: [{ label: "Hostel" }] },
+  { question: "Exam schedule and rules",
+    keywords: ["exam","exams","timetable","schedule","hall ticket","internal","semester","test"],
+    answer: "The exam timetable is published on the notice board and college website 2 weeks before exams. Carry your ID card and hall ticket to every exam. Mobile phones are not allowed in the exam hall." },
+  { question: "Attendance requirement",
+    keywords: ["attendance","percentage","shortage","detained","75"],
+    answer: "You need at least 75% attendance in each subject to write the semester exam. If you have a medical reason, submit a certificate to your class advisor." },
+  { question: "Fee payment",
+    keywords: ["fee","fees","payment","pay","tuition","due","accounts"],
+    answer: "Fees can be paid online through the college portal or at the accounts office (Admin Block, Ground Floor) from 10:00 AM to 3:00 PM on working days.",
+    maps: [{ label: "Accounts Office (Admin Block)", search: "Admin Block" }] },
+  { question: "College bus",
+    keywords: ["bus","transport","route","pickup","shuttle"],
+    answer: "College buses leave the campus at 4:45 PM and reach campus by 8:15 AM. Route and stop details are available at the transport office near the main gate.",
+    maps: [{ label: "Transport Office / Main Gate", search: "Main Gate" }] },
+  { question: "Wi-Fi",
+    keywords: ["wifi","wi-fi","internet","network","password"],
+    answer: "Campus Wi-Fi is free for students. Log in with your student ID and the password given by the IT department. For problems, visit the IT help desk in Block B, Room 105.",
+    maps: [{ label: "IT Help Desk (Block B)", search: "Block B" }] },
+  { question: "Clubs and events",
+    keywords: ["club","clubs","event","events","fest","activities","join","sports"],
+    answer: "Our campus has technical, cultural, sports, and social service clubs. Sign-ups happen in the first month of each semester. Check the student notice board for upcoming events." },
+  { question: "Placements",
+    keywords: ["placement","placements","job","jobs","internship","recruit","company","career"],
+    answer: "The Training & Placement Cell is in the Admin Block, First Floor. It runs aptitude training, mock interviews, and campus drives. Register with the cell to get drive updates.",
+    maps: [{ label: "Placement Cell (Admin Block)", search: "Admin Block" }] },
+  { question: "Office contact",
+    keywords: ["office","contact","phone","email","reach","admin","help desk"],
+    answer: "The college office is open from 9:30 AM to 4:30 PM on working days. Phone: 0000-000000. Email: office@yourcollege.edu\nThe Admin Block is near the main gate.",
+    maps: [{ label: "Admin Block", search: "Admin Block" }] },
+  { question: "Labs",
+    keywords: ["lab","labs","laboratory","computer lab"],
+    answer: "The labs are in Block B.",
+    maps: [{ label: "Block B (Labs)", search: "Block B" }] },
+  { question: "Auditorium",
+    keywords: ["auditorium","seminar hall","theatre","stage"],
+    answer: "The auditorium is behind the canteen.",
+    maps: [{ label: "Auditorium" }] },
+  { question: "Medical room",
+    keywords: ["medical","clinic","doctor","first aid","sick","health"],
+    answer: "The medical room is in the Admin Block, Ground Floor.",
+    maps: [{ label: "Medical Room (Admin Block)", search: "Admin Block" }] },
+  { question: "Main gate",
+    keywords: ["gate","main gate","entrance","entry"],
+    answer: "The main gate is the entrance to the campus. The Admin Block and the transport office are near it.",
+    maps: [{ label: "Main Gate" }] },
+  { question: "Department and classes",
+    keywords: ["department","departments","dept","branch","course","classroom","class room"],
+    answer: "Your department and class details are in your admission documents and on the class notice board. Academic buildings include Block A and Block B. If you are unsure where to go, the Admin Block office near the main gate can guide you.",   // EDIT with your real departments
+    maps: [{ label: "Admin Block", search: "Admin Block" }] },
+  { question: "Campus address and directions",
+    keywords: ["address","directions","direction","how to reach","way to college","come to college"],
+    answer: "Our campus is at Ettimadai, Coimbatore, Tamil Nadu. Use the map link for directions.",
+    maps: [{ label: "Campus", search: null }] }
+];
+
+const noAnswer = "Sorry, I don't have that information. Please contact the college office.\n\nYou can ask me about: library, mess, hostel, exams, attendance, fees, bus, Wi-Fi, clubs and sports, placements, labs, medical room, or where something is on campus.";
+
+const suggestions = [
+  "What time does the library close?",
+  "What events are happening tomorrow?",
+  "What is the attendance requirement?",
+  "How do I pay my fees?"
+];
+
+/* ============================================================
+   SYNONYMS  -  words on the right side all mean the word on the
+   left. Add more here when students use different words.
+   ============================================================ */
+const SYNONYMS = {
+  time:       "timing timings hour hours open opens opening close closes closed closing shut end ends ending start starts starting begin begins duration slot slots clock",
+  mess:       "canteen cafeteria cafe cafeterias dining meal meals food foods eat eating hungry hunger restaurant tiffin breakfast lunch dinner supper snack snacks refreshment refreshments",
+  fee:        "fees payment payments pay paying paid payable tuition dues due challan installment instalment bill billing",
+  hostel:     "hostels dorm dorms dormitory dormitories accommodation lodging residence residential roommate roomie hostler hostellers",
+  visitor:    "visitors guest guests parents parent relatives relative family friends meeting",
+  bus:        "buses transport transportation shuttle vehicle vehicles commute van route routes stop stops pickup pick drop travel",
+  wifi:       "internet network networks broadband net data signal router login connectivity connect connection hotspot ssid",
+  placement:  "placements job jobs internship internships intern interns recruit recruits recruitment recruiter recruiters career careers hiring hire interview interviews aptitude",
+  exam:       "exams examination examinations test tests quiz quizzes viva practical practicals assessment assessments midterm midsem endsem finals",
+  attendance: "present absent absence percentage shortage detained detention attend attending",
+  library:    "libraries book books borrow borrowing lend lending librarian novel novels journal journals magazine magazines",
+  contact:    "phone phones email emails mail call calling telephone helpline enquiry inquiry",
+  club:       "clubs society societies fest festival festivals activities activity event events cultural technical nss ncc volunteer volunteering dance music drama sport sports game games cricket football soccer basketball volleyball badminton tennis athletics tournament tournaments",
+  medical:    "doctor doctors clinic clinics hospital hospitals health sick ill illness fever injury injured medicine medicines nurse ambulance checkup",
+  lab:        "labs laboratory laboratories",
+  auditorium: "theatre theater stage auditoriums",
+  gate:       "entrance gates entry exit",
+  office:     "offices clerk registrar principal",
+  address:    "directions direction",
+  department: "departments dept depts branch branches course courses classroom classrooms"
+};
+
+/* ----------------- Matching logic (no need to edit) ----------------- */
+const STOP = new Set(("a an the is are was were am be been do does did can could would should will shall may might " +
+  "i me my mine we our you your it its of to in on at for from with and or but if about any some " +
+  "what which who whom how when where why please tell know want need get give there this that these those " +
+  "have has had like just also kindly hi hello hey much many " +
+  "map maps link links google location locations situated located show " +
+  "bring carry take use last date allow allowed able possible available info information detail details " +
+  "regarding related question doubt help ask asking let whether yes no ok okay really actually anything something " +
+  "play playing not working work doesnt dont isnt cant cannot " +
+  "college campus university amrita avv").split(" "));
+
+function stem(w){
+  if (w.length > 4 && w.endsWith("ies")) return w.slice(0,-3) + "y";
+  if (w.length > 5 && w.endsWith("ing")) return w.slice(0,-3);
+  if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) return w.slice(0,-1);
+  return w;
+}
+
+const SYN = {};
+for (const canon in SYNONYMS){
+  SYNONYMS[canon].split(" ").forEach(w => { SYN[w] = canon; SYN[stem(w)] = canon; });
+}
+
+const norm = w => { const s = stem(w); return SYN[w] || SYN[s] || s; };
+
+function tokenize(text, keepStop){
+  return text.toLowerCase()
+    .replace(/wi-?fi/g, "wifi")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/).filter(Boolean)
+    .filter(w => keepStop || !STOP.has(w))
+    .map(norm);
+}
+
+function lev(a, b){
+  const m = a.length, n = b.length;
+  let prev = Array.from({length: n + 1}, (_, j) => j);
+  for (let i = 1; i <= m; i++){
+    const cur = [i];
+    for (let j = 1; j <= n; j++){
+      cur[j] = Math.min(prev[j] + 1, cur[j-1] + 1, prev[j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+    }
+    prev = cur;
+  }
+  return prev[n];
+}
+
+/* how similar are two words: 1 exact, 0.8 typo, 0.7 prefix, 0 no match */
+function sim(a, b){
+  if (a === b) return 1;
+  const shortest = Math.min(a.length, b.length);
+  if (shortest < 4 || a[0] !== b[0]) return 0;
+  if (lev(a, b) <= (Math.max(a.length, b.length) >= 8 ? 2 : 1)) return 0.8;
+  if (shortest >= 5 && (a.startsWith(b) || b.startsWith(a))) return 0.7;
+  return 0;
+}
+
+/* Build index: every topic gets weighted terms
+   keywords = 3, topic title = 2.5, words inside the answer = 0.6 */
+const df = {};
+knowledgeBase.forEach(item => {
+  const terms = new Map();
+  const add = (toks, w) => toks.forEach(t => { if (!terms.has(t) || terms.get(t) < w) terms.set(t, w); });
+  item.keywords.forEach(k => add(tokenize(k, true), 3));
+  add(tokenize(item.question), 2.5);
+  add(tokenize(item.answer).filter(t => t.length > 3), 0.6);
+  item.terms = terms;
+  for (const t of terms.keys()) df[t] = (df[t] || 0) + 1;
+});
+const idf = t => Math.log(knowledgeBase.length / df[t]) + 1;   // rare words count more
+
+function score(item, queryTokens){
+  let total = 0;
+  for (const q of queryTokens){
+    let best = 0;
+    for (const [t, w] of item.terms){
+      const m = sim(q, t);
+      if (m) best = Math.max(best, m * w * idf(t));
+    }
+    total += best;
+  }
+  return total;
+}
+
+/* ----------------- Google Maps links ----------------- */
+function mapLink(m){
+  if (m.url) return { label: m.label, url: m.url };
+  const place = m.search === null ? CAMPUS : (m.search || m.label) + ", " + CAMPUS;
+  return { label: m.label, url: "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(place) };
+}
+
+function linksFor(items){
+  const seen = new Set(), out = [];
+  items.forEach(it => (it.maps || []).forEach(m => {
+    const l = mapLink(m);
+    if (!seen.has(l.url)){ seen.add(l.url); out.push(l); }
+  }));
+  return out;
+}
+
+const MIN_SCORE  = 3.5;   // below this -> "I don't have that info"
+const CONFIDENT  = 7;     // below this -> "I think you're asking about..."
+
+/* returns { text, links } */
+function findAnswer(text){
+  const say = (t, links) => ({ text: t, links: links || [] });
+
+  // sensitive: someone may be struggling -> respond with care, not a campus answer
+  if (/\b(suicide|suicidal|kill myself|end my life|self[- ]?harm|hurt myself|want to die)\b/i.test(text))
+    return say("I'm really sorry you're going through a hard time. You don't have to handle this alone. Please talk to someone you trust, your class advisor, or the college counsellor. In India you can also call Tele-MANAS, a free 24x7 helpline, at 14416.");
+
+  // inappropriate language -> polite redirect, no guessing
+  if (/\b(f+u+c+k\w*|shit\w*|bitch\w*|asshole|bastard|slut|whore|porn\w*|nude\w*|dick|pussy|madarchod|behenchod|bhenchod|chutiya|gaandu|bhosd\w*|randi)\b/i.test(text))
+    return say("Let's keep things respectful, please. I'm happy to help with campus questions like timings, fees, hostel rules, or finding a place.");
+
+  // emergency words -> open Emergency Mode
+  const em = detectEmergency(text);
+  if (em){
+    const r = say("This looks like an emergency. I'm opening emergency help for you. If someone is in danger, call 112 right now.");
+    r.emergency = em;
+    return r;
+  }
+
+  // new student -> open the welcome guide
+  if (/\b(new here|i'?m new|im new|new student|new to (the )?(campus|college)|freshers?|first[- ]year|first day|just joined|orientation)\b/i.test(text)){
+    const r = say("WELCOME TO CAMPUS");
+    r.guide = true;
+    return r;
+  }
+
+  // events: "events today", "what's happening tomorrow", "workshop on Friday"
+  if (isEventQuery(text)) return eventsReply(text);
+
+  if (/^\s*(thanks|thank you|thx|ty)\b/i.test(text)) return say("You're welcome! Ask me anything else about campus.");
+  if (/^\s*(hi|hello|hey|hii|good (morning|afternoon|evening))\W*$/i.test(text)) return say("Hello! What would you like to know about campus?");
+
+  const q = [...new Set(tokenize(text))];
+  if (!q.length) return say(noAnswer);
+
+  // a lone generic word like "time" is too vague to pick a topic
+  if (q.every(t => t === "time")) return say("Timings of what? I can tell you the library, mess, bus, office or exam timings.");
+
+  const ranked = knowledgeBase
+    .map(item => ({ item, s: score(item, q) }))
+    .sort((a, b) => b.s - a.s);
+  const best = ranked[0];
+  if (best.s < MIN_SCORE) return say(noAnswer);
+
+  // 3+ topics tied -> too vague, ask for detail
+  const tied = ranked.filter(r => r.s >= best.s * 0.85);
+  if (tied.length >= 3){
+    return say("That could mean a few things. Could you be more specific? I can help with: " +
+      tied.slice(0, 4).map(r => r.item.question.toLowerCase()).join(", ") + ".");
+  }
+
+  // 1-2 close matches -> answer both (e.g. "library and mess timings")
+  const picks = ranked.filter(r => r.s >= best.s * 0.75 && r.s >= MIN_SCORE).slice(0, 2);
+  // Every important word should be understood. If too many words are unknown to the
+  // chosen topic(s), the question is probably about something else -> do not guess.
+  const important = q.filter(tok => tok !== "time");   // "time" is too generic to count
+  const understood = important.filter(tok => picks.some(p => {
+    for (const t of p.item.terms.keys()) if (sim(tok, t)) return true;
+    return false;
+  }));
+  if (understood.length / important.length < 0.6) return say(noAnswer);
+
+  const links = linksFor(picks.map(p => p.item));
+  if (picks.length === 1 && best.s < CONFIDENT){
+    return say("I think you're asking about " + best.item.question.toLowerCase() + ":\n" + best.item.answer, links);
+  }
+  return say(picks.map(p => p.item.answer).join("\n\n"), links);
+}
+
+/* ============================================================
+   EVENTS  -  EDIT THIS LIST ("What's happening today?")
+   Use  in: 0  for today, 1 for tomorrow, 2 for the day after ...
+        (handy for demos: these sample events always look current)
+   or   date: "2026-10-15"  for a real calendar date.
+   time is 24-hour "HH:MM". place is searched on Google Maps.
+   ============================================================ */
+const events = [
+  { in: 0, time: "10:00", title: "AI Club Workshop",              place: "AB1" },
+  { in: 0, time: "14:00", title: "Football Selection",            place: "Sports Ground" },
+  { in: 0, time: "17:30", title: "Tech Talk",                     place: "Auditorium" },
+  { in: 1, time: "11:00", title: "Cultural Club Auditions",       place: "Auditorium" },
+  { in: 1, time: "15:00", title: "Aptitude Training",             place: "Admin Block" },
+  { in: 2, time: "10:00", title: "Hackathon Kick-off",            place: "Block B" },
+  { in: 4, time: "16:00", title: "Inter-Department Cricket Match", place: "Sports Ground" }
+];
+
+const MON3 = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+const WEEKDAYS = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
+const startOfDay = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const sameDay = (a, b) => a.getTime() === b.getTime();
+
+function eventDay(ev){
+  if (ev.date){ const [y, m, d] = ev.date.split("-").map(Number); return new Date(y, m - 1, d); }
+  return addDays(startOfDay(new Date()), ev.in || 0);
+}
+
+function fmtTime(t){
+  const [h, m] = t.split(":").map(Number);
+  return ((h % 12) || 12) + ":" + String(m).padStart(2, "0") + " " + (h >= 12 ? "PM" : "AM");
+}
+
+function dayHeading(day){
+  const diff = Math.round((day - startOfDay(new Date())) / 86400000);
+  const label = diff === 0 ? "TODAY" : diff === 1 ? "TOMORROW" : diff === -1 ? "YESTERDAY" : WEEKDAYS[day.getDay()].toUpperCase();
+  return "\uD83D\uDCC5 " + label + " \u2014 " + MON3[day.getMonth()].toUpperCase() + " " + day.getDate();
+}
+
+/* which day(s) is the student asking about? */
+function parseEventDays(text){
+  const t = text.toLowerCase(), today = startOfDay(new Date());
+  if (/day after tomorrow/.test(t)) return { days: [addDays(today, 2)], multi: false };
+  if (/\b(tomorrow|tmrw|tomorow)\b/.test(t)) return { days: [addDays(today, 1)], multi: false };
+  if (/\b(today|tonight|now)\b/.test(t)) return { days: [today], multi: false };
+  if (/\byesterday\b/.test(t)) return { days: [addDays(today, -1)], multi: false };
+
+  const mons = "(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)";
+  let m = t.match(new RegExp("\\b(\\d{1,2})(?:st|nd|rd|th)?\\s*(?:of\\s+)?" + mons + "[a-z]*\\b"));
+  if (m) return { days: [new Date(today.getFullYear(), MON3.indexOf(m[2]), +m[1])], multi: false };
+  m = t.match(new RegExp("\\b" + mons + "[a-z]*\\s+(\\d{1,2})(?:st|nd|rd|th)?\\b"));
+  if (m) return { days: [new Date(today.getFullYear(), MON3.indexOf(m[1]), +m[2])], multi: false };
+
+  const wd = WEEKDAYS.findIndex(w => t.includes(w));
+  if (wd >= 0) return { days: [addDays(today, (wd - today.getDay() + 7) % 7)], multi: false };
+
+  return { days: Array.from({ length: 7 }, (_, i) => addDays(today, i)), multi: true };   // this week
+}
+
+function isEventQuery(text){
+  return /\b(events?|happening|going on|what'?s on|whats on|workshops?|programmes?|selections?|fests?|festivals?|competitions?)\b/i.test(text);
+}
+
+function eventsReply(text){
+  const sel = parseEventDays(text);
+  const blocks = [], places = new Set();
+  sel.days.forEach(day => {
+    const evs = events.filter(e => sameDay(eventDay(e), day)).sort((a, b) => a.time.localeCompare(b.time));
+    if (!evs.length){
+      if (!sel.multi) blocks.push(dayHeading(day) + "\n\nNo events are scheduled. Check the student notice board for updates.");
+      return;
+    }
+    evs.forEach(e => places.add(e.place));
+    blocks.push(dayHeading(day) + "\n\n" +
+      evs.map(e => fmtTime(e.time) + "\n" + e.title + "\n\uD83D\uDCCD " + e.place).join("\n\n"));
+  });
+  if (!blocks.length) return { text: "No events are scheduled for this week yet. Check the student notice board for updates.", links: [] };
+  return { text: blocks.join("\n\n"), links: [...places].map(pl => mapLink({ label: pl })) };
+}
+
+/* ============================================================
+   EMERGENCY MODE  -  EDIT THE NUMBERS AND PLACES BELOW
+   * The 0422-26001xx numbers are SAMPLES: put your real campus numbers.
+   * 112 (all emergencies), 108 (ambulance), 101 (fire), 100 (police)
+     are the national numbers in India.
+   * Lines marked EDIT are guesses: change them to the real place.
+   * map: { label, search } -> Google Maps search inside the campus
+         or { label, url } -> exact pin link (Google Maps > Share)
+   ============================================================ */
+const EMERGENCY = {
+  national: { label: "Call 112 - Police / Fire / Ambulance", number: "112" },
+  categories: [
+    { id: "medical", icon: "\uD83E\uDE7A", title: "Medical Emergency", blocks: [
+      { heading: "Medical room", text: "Admin Block, Ground Floor.",
+        map: { label: "Medical Room (Admin Block)", search: "Admin Block" } },
+      { heading: "Emergency contacts", contacts: [
+        { label: "Campus medical room", number: "0422-2600110" },   // SAMPLE number: replace
+        { label: "Ambulance", number: "108" } ] },
+      { heading: "Nearest hospital", text: "Open the map to see the hospitals closest to the campus.",
+        map: { label: "Hospitals near campus", search: "Hospital" } },
+      { heading: "What to do", steps: [
+        "Stay calm. Call the medical room, 108 or 112 right away, or ask someone nearby to call.",
+        "Give the exact place: block, floor and room.",
+        "Do not move the person if a neck or back injury is possible, unless they are in danger.",
+        "For heavy bleeding, press firmly on the wound with a clean cloth.",
+        "If the person is not responding or not breathing normally and you know CPR, start it. Ask someone to bring an AED if the campus has one.",
+        "Stay with the person until help arrives." ] } ] },
+
+    { id: "fire", icon: "\uD83D\uDD25", title: "Fire", blocks: [
+      { heading: "Nearest exit", text: "Leave by the nearest staircase or exit marked on the evacuation plan. Never use the lift." },
+      { heading: "Assembly point", text: "Open ground in front of the Admin Block.",   // EDIT
+        map: { label: "Assembly point", search: "Admin Block" } },
+      { heading: "Emergency contacts", contacts: [
+        { label: "Fire service", number: "101" },
+        { label: "Campus security", number: "0422-2600120" } ] },   // SAMPLE number: replace
+      { heading: "What to do", steps: [
+        "Shout \"Fire!\" and set off the nearest fire alarm.",
+        "Call 101 or 112 and campus security. Say the building and floor.",
+        "Leave at once using the stairs. Do not use lifts.",
+        "Stay low if there is smoke. Close doors behind you if it is safe.",
+        "Do not go back for belongings.",
+        "Go to the assembly point and report to your faculty or warden for the head count." ] } ] },
+
+    { id: "security", icon: "\uD83D\uDEE1\uFE0F", title: "Security", blocks: [
+      { heading: "Security office", text: "Near the main gate.",   // EDIT
+        map: { label: "Security office / Main Gate", search: "Main Gate" } },
+      { heading: "Emergency contacts", contacts: [
+        { label: "Campus security", number: "0422-2600120" },   // SAMPLE number: replace
+        { label: "Police", number: "100" } ] },
+      { heading: "What to do", steps: [
+        "Move to a well-lit place with other people.",
+        "Call campus security or 112 and say where you are.",
+        "Do not confront the person. Your safety comes first.",
+        "Note what you saw: who, what and when.",
+        "Tell your warden or a faculty member as soon as you can." ] } ] },
+
+    { id: "accident", icon: "\uD83D\uDE91", title: "Accident", blocks: [
+      { heading: "Medical room", text: "Admin Block, Ground Floor.",
+        map: { label: "Medical Room (Admin Block)", search: "Admin Block" } },
+      { heading: "Security", text: "Inform security so they can guide the ambulance and keep the way clear. The security office is near the main gate.",   // EDIT
+        map: { label: "Security office / Main Gate", search: "Main Gate" } },
+      { heading: "Emergency contacts", contacts: [
+        { label: "Campus medical room", number: "0422-2600110" },   // SAMPLE number: replace
+        { label: "Campus security", number: "0422-2600120" },   // SAMPLE number: replace
+        { label: "Ambulance", number: "108" } ] },
+      { heading: "Emergency instructions", steps: [
+        "Make the area safe: warn others and keep away from traffic or danger.",
+        "Call the medical room, 108 or 112 and say exactly where you are.",
+        "Do not move the injured person unless there is immediate danger.",
+        "Press a clean cloth firmly on any heavy bleeding.",
+        "Ask someone to wait at the nearest gate or road to guide the ambulance.",
+        "Inform security, and then the faculty or warden." ] } ] }
+  ]
+};
+
+/* words in a chat message that should open Emergency Mode */
+function detectEmergency(text){
+  if (/\b(fire|smoke|gas leak)\b/i.test(text)) return "fire";
+  if (/\b(accident|injur(ed|y)|crash(ed)?)\b/i.test(text)) return "accident";
+  if (/\b(theft|stolen|stole|robbed|robbery|thief|harass\w*|stalk\w*|ragging|molest\w*|unsafe|threat\w*|security)\b/i.test(text)) return "security";
+  if (/\b(emergency|ambulance|unconscious|bleeding|heart attack|faint(ed|ing)?|seizure|choking|first aid|urgent)\b/i.test(text)) return "medical";
+  return null;
+}
+
+/* ----------------- Chat UI ----------------- */
+const chat = document.getElementById("chat");
+const input = document.getElementById("q");
+const chips = document.getElementById("chips");
+
+function addMessage(text, who, links, actions){
+  const d = document.createElement("div");
+  d.className = "msg " + who;
+  d.textContent = text;
+  if (links && links.length){
+    const box = document.createElement("div");
+    box.className = "links";
+    links.forEach(l => {
+      const a = document.createElement("a");
+      a.className = "maplink";
+      a.href = l.url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.textContent = "\uD83D\uDCCD " + l.label + " - Open in Google Maps";
+      box.appendChild(a);
+    });
+    d.appendChild(box);
+  }
+  if (actions && actions.length){
+    const grid = document.createElement("div");
+    grid.className = "guide";
+    actions.forEach(a => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "chip";
+      b.textContent = a.label;
+      b.onclick = a.run;
+      grid.appendChild(b);
+    });
+    d.appendChild(grid);
+  }
+  chat.appendChild(d);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function ask(text){
+  text = text.trim();
+  if (!text) return;
+  addMessage(text, "me");
+  input.value = "";
+  setTimeout(() => {
+    const r = findAnswer(text);
+    if (r.guide){ addGuide(); return; }
+    addMessage(r.text, "bot", r.links);
+    if (r.emergency) openEmergency(r.emergency);
+  }, 350);
+}
+
+/* "I'm New Here" guide: each button asks the matching question */
+const GUIDE = [
+  { label: "\uD83D\uDCCD Find your department", run: () => ask("Where is my department?") },
+  { label: "\uD83C\uDF74 Find the mess",        run: () => ask("Where is the mess?") },
+  { label: "\uD83D\uDCDA Find the library",     run: () => ask("Where is the library?") },
+  { label: "\uD83E\uDE7A Find medical room",    run: () => ask("Where is the medical room?") },
+  { label: "\uD83D\uDE8C Understand transport", run: () => ask("How does the college bus work?") },
+  { label: "\uD83D\uDCF6 Connect to Wi-Fi",     run: () => ask("How do I connect to wifi?") },
+  { label: "\uD83C\uDFE0 Hostel rules",         run: () => ask("What are the hostel rules?") },
+  { label: "\uD83C\uDFAD Join clubs",           run: () => ask("How do I join a club?") },
+  { label: "\uD83D\uDCC5 Today's events",       run: () => ask("What's happening today?") },
+  { label: "\uD83D\uDEA8 Emergency contacts",   run: () => openEmergency("medical") }
+];
+
+function addGuide(){
+  addMessage("WELCOME TO CAMPUS \uD83D\uDC4B\n\nStart here. Tap anything you want to know, or just type your own question.", "bot", null, GUIDE);
+}
+
+/* big feature buttons */
+[
+  { label: "\uD83D\uDCC5 What's happening today?", q: "What's happening today?" },
+  { label: "\uD83C\uDF93 I'm New Here",            q: "I'm new here" }
+].forEach(f => {
+  const b = document.createElement("button");
+  b.className = "chip feature";
+  b.textContent = f.label;
+  b.onclick = () => ask(f.q);
+  chips.appendChild(b);
+});
+
+suggestions.forEach(s => {
+  const b = document.createElement("button");
+  b.className = "chip";
+  b.textContent = s;
+  b.onclick = () => ask(s);
+  chips.appendChild(b);
+});
+
+/* ----------------- Emergency panel ----------------- */
+const sosPanel = document.getElementById("sos-panel");
+const sosTabs  = document.getElementById("sos-tabs");
+const sosBody  = document.getElementById("sos-body");
+const sosOpen  = document.getElementById("sos");
+const sosClose = document.getElementById("sos-close");
+const behindPanel = ["chat", "chips", "bar"].map(id => document.getElementById(id)).concat(document.querySelector("header"));
+let lastFocus = null;
+
+function el(tag, cls, text){
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+function showEmergency(id){
+  const cats = EMERGENCY.categories;
+  const cat = cats.find(c => c.id === id) || cats[0];
+
+  sosTabs.textContent = "";
+  cats.forEach(c => {
+    const b = el("button", "sos-tab", c.icon + " " + c.title);
+    b.type = "button";
+    b.setAttribute("aria-pressed", String(c.id === cat.id));
+    b.onclick = () => showEmergency(c.id);
+    sosTabs.appendChild(b);
+  });
+
+  sosBody.textContent = "";
+  sosBody.appendChild(el("h3", null, cat.icon + " " + cat.title));
+  cat.blocks.forEach(blk => {
+    const card = el("div", "sos-card");
+    card.appendChild(el("h4", null, blk.heading));
+    if (blk.text) card.appendChild(el("p", null, blk.text));
+    if (blk.contacts){
+      const row = el("div", "sos-row");
+      blk.contacts.forEach(c => {
+        const a = el("a", "sos-call", "\uD83D\uDCDE " + c.label + ": " + c.number);
+        a.href = "tel:" + c.number.replace(/[^0-9+]/g, "");
+        row.appendChild(a);
+      });
+      card.appendChild(row);
+    }
+    if (blk.map){
+      const l = mapLink(blk.map);
+      const row = el("div", "links");
+      const a = el("a", "maplink", "\uD83D\uDCCD " + l.label + " - Open in Google Maps");
+      a.href = l.url; a.target = "_blank"; a.rel = "noopener noreferrer";
+      row.appendChild(a);
+      card.appendChild(row);
+    }
+    if (blk.steps){
+      const ol = el("ol");
+      blk.steps.forEach(st => ol.appendChild(el("li", null, st)));
+      card.appendChild(ol);
+    }
+    sosBody.appendChild(card);
+  });
+  sosBody.scrollTop = 0;
+}
+
+function openEmergency(id){
+  lastFocus = document.activeElement;
+  document.getElementById("call112").textContent = "\uD83D\uDCDE " + EMERGENCY.national.label;
+  document.getElementById("call112").href = "tel:" + EMERGENCY.national.number;
+  showEmergency(id || "medical");
+  sosPanel.hidden = false;
+  behindPanel.forEach(n => n.inert = true);      // keeps keyboard focus inside the panel
+  sosClose.focus();
+}
+
+function closeEmergency(){
+  sosPanel.hidden = true;
+  behindPanel.forEach(n => n.inert = false);
+  if (lastFocus && lastFocus.focus) lastFocus.focus(); else input.focus();
+}
+
+sosOpen.onclick = () => openEmergency("medical");
+sosClose.onclick = closeEmergency;
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !sosPanel.hidden) closeEmergency(); });
+
+document.getElementById("send").onclick = () => ask(input.value);
+input.addEventListener("keydown", e => { if (e.key === "Enter") ask(input.value); });
+
+addMessage("Hi! I'm CampusBuddy. Ask me about library timings, mess, hostel, exams, fees, buses, events, or where something is on campus. New here? Tap the green button. In an emergency, tap the red EMERGENCY button.", "bot");
+</script>
+</body>
+</html>
