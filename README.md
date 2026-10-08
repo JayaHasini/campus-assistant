@@ -101,68 +101,81 @@ Tested common campus questions and improved responses.
 
 ## Working Application
 
-**Live Application:** [Live URL]
+**Live Application:** [http://127.0.0.1:5000/]
 
-[Briefly explain how the deployed application can be accessed and what functionality can be tested.]
-
-The submitted application should be functional and accessible through the provided link where applicable.
 
 ## Demo Video
 
-**Demo Video:** [Video URL]
+**Demo Video:** [https://youtu.be/HYnxCyZ4N_E]
 
-[https://youtu.be/HYnxCyZ4N_E]
+[Student: “Where is the CSE department?”
+CampusBuddy: “The CSE department is located in Block A, 2nd Floor.”
+
+Flow:
+Ask → Gemma processes → Campus data retrieved → Answer displayed.]
 
 ## Open Source and AI Usage
-
+Python, Flask, HTML, CSS, JavaScript.
 ### AI / Models
-
-- **[Model]:** [How it is used]
+Google Gemma is used to understand student queries and generate responses.
+- **[Model]:** [Campus information is stored locally and used to provide relevant answers.]
 
 ### Open Source Components
 
-- **[Library / Framework]:** [Purpose]
-- **[Dataset]:** [Purpose]
-- **[API / Service]:** [Purpose]
+- **[Library / Framework]:** Flask — Backend and request handling
+- **[Dataset]:** Campus Knowledge Base — Stores campus information
+- **[API / Service]:**Gemma API — AI-based query processing and response generation
 
-[Include relevant licenses, attribution, and acknowledgements for external components.]
+Python & Flask: Open-source software used under their respective licenses.
+Gemma: Google’s open model, used according to its Gemma Terms of Use.
+HTML, CSS & JavaScript: Standard web technologies.
+Acknowledgement: Thanks to the open-source community and Google for providing the tools and AI model used in CampusBuddy.
 
-## Setup and Usage
+## Install Python and required Flask packages.
+Add the Gemma API key and campus knowledge base.
+Run the Flask backend locally.
+Open the CampusBuddy web interface in a browser.
+Enter a campus-related question and receive an AI-generated answer.
 
 ### Prerequisites
-
-- [Requirement]
-- [Requirement]
-
+Python 3.x
+Flask
+Gemma API access & API key
+Web browser
+Campus knowledge-base data
+Internet connection
+- 
 ### Installation
-
-```bash
-git clone [repository-url]
-cd [project-directory]
-[installation-command]
-```
+Install Python 3.x.
+Install Flask: pip install flask
+Add the Gemma API key.
+Add the campus knowledge base.
+Run the Flask application.
+Open CampusBuddy in a web browser.
 
 ### Environment Variables
-
-```env
-[VARIABLE_NAME]=[value]
-```
+GEMMA_API_KEY — API key for accessing the Gemma AI model.
+FLASK_ENV — Flask application environment (development / production).
+PORT — Port number used to run the application.
 
 
 
 ### Running the Project
 
 ```bash
-[run-command]
+[git bash]
 ```
 
 ### Usage
 
-[Explain the basic steps required to use the project.]
+Open CampusBuddy in a web browser.
+Enter a campus-related question.
+Gemma processes the query using the campus knowledge base.
+View the generated answer instantly.
 
 ## Devpost Submission
 
-**Devpost Project:** [Devpost Project URL]
+**Devpost Project:** [-]
 
 [Add the link to the team's Devpost submission. Ensure the Devpost project page is complete and contains the required project information, links, media, and team details.]
 
@@ -170,33 +183,39 @@ cd [project-directory]
 
 ### Credits
 
-[Credit libraries, frameworks, datasets, models, APIs, contributors, and other external resources used.]
+AI Model: Google Gemma
+Backend: Python & Flask
+Frontend: HTML, CSS & JavaScript
+License: Open-source components used under their respective licenses.
+Acknowledgement: Google and the open-source community.
 
 ### License
 
-[License name and/or link.]
+[https://github.com/google-deepmind/gemma/blob/main/LICENSE?utm_source=chatgpt.com]
 
 ## Submission Checklist
 
-- [ ] Project title and description added
-- [ ] All team members listed
-- [ ] Problem clearly explained
-- [ ] Reason for choosing the problem explained
-- [ ] Solution and key features documented
-- [ ] Innovation and differentiation explained
-- [ ] Architecture included
-- [ ] Technical implementation documented
-- [ ] Work completed during the hackathon documented
-- [ ] Team contributions documented
-- [ ] Working application is functional
-- [ ] Live application link added where applicable
-- [ ] Demo video added
-- [ ] AI and open-source components documented
-- [ ] Setup and usage instructions tested
-- [ ] Challenges and learnings documented
-- [ ] Devpost submission completed
+- [yes ] Project title and description added
+- [ yes] All team members listed
+- [ yes] Problem clearly explained
+- [ yes] Reason for choosing the problem explained
+- [ yes] Solution and key features documented
+- [yes ] Innovation and differentiation explained
+- [ yes] Architecture included
+- [ yes] Technical implementation documented
+- [ yes] Work completed during the hackathon documented
+- [ yes] Team contributions documented
+- [ yes] Working application is functional
+- [yes ] Live application link added where applicable
+- [yes ] Demo video added
+- [ yes] AI and open-source components documented
+- [yes] ] Setup and usage instructions tested
+- [yes] ] Setup and usage instructions tested
+- [yes] ] Setup and usage instructions tested
+- [ yes]] Challenges and learnings documented
+- [ yes]] Devpost submission completed
 - [ ] Devpost link added
-- [ ] Credits added
-- [ ] License added
-- [ ] Repository is organized and complete
+- [ yes]] Credits added
+- [yes] ] License added
+- [yes] ] Repository is organized and complete
 - [ ] 
