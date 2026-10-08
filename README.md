@@ -41,44 +41,63 @@ CampusBuddy addresses this by providing a clean, responsive web dashboard center
 Standard AI chatbots pull information broadly from the open web, often resulting in inaccurate, generic, or completely hallucinated answers that do not apply to a specific college campus. CampusBuddy innovates by implementing a strict Closed-World Assumption model. It acts as a highly disciplined system that prioritizes accurate institutional guardrails over generic text generation, guaranteeing that a student never receives confidently incorrect information regarding critical events like exams or medical emergencies.
 
 ## Technical Implementation
-
+we have used gemma ai to be integrated with our webpage and html for the creation 
 ### Architecture
-
-Add the system architecture or workflow Mermaid diagram here.
-
+Student → Web UI → Python Backend → Campus Knowledge Base + Gemma AI → Answer
+  Student
+           ↓
+   CampusBuddy Website
+           ↓
+      Python Backend
+           ↓
+   Campus Knowledge Base
+           ↓
+      Gemma AI Model
+           ↓
+   Simple Relevant Answer
+           ↓
+        Student
 ### Technology Stack
 
 
 | Category        | Technologies                |
 | --------------- | --------------------------- |
-| Frontend        | [Technologies / N/A]        |
-| Backend         | [Technologies / N/A]        |
-| Database        | [Technologies / N/A]        |
-| AI / ML         | [Models / frameworks / N/A] |
-| Infrastructure  | [Technologies / N/A]        |
-| APIs / Services | [Services / N/A]            |
+| Frontend        | [HTML, CSS, JavaScript]     |
+| Backend         | [Python, Flask]             |
+| Database        | [JSON / Local Knowledge Base]|
+| AI / ML         | [Google Gemma] |
+| Infrastructure  | [Localhost / Python Environment]|
+| APIs / Services | [Gemma API]            |
 
 
 If a category or technology is not implemented in the project, specify `N/A` instead of leaving the field blank.
 
 ### How It Works
 
-[Explain the major components of the system and how they interact.]
+[Student asks a question → Backend receives it → Gemma processes it with campus data → Generates an answer → Answer shown on website..]
 
 ### Technical Decisions
-
-[Explain important architectural, algorithmic, or engineering decisions made during development.]
+Frontend: HTML, CSS, JavaScript for a simple chat interface.
+Backend: Python Flask for handling requests.
+AI: Gemma for natural-language understanding and responses.
+Knowledge Base: JSON-based campus information for easy updates.
+Integration: Gemma API connects the AI with the backend.
+[]
 
 ## Implementation During the Hackathon
+Built the CampusBuddy web interface.
+Connected the Flask backend with the frontend.
+Added a campus knowledge base with relevant information.
+Integrated Gemma AI for answering student queries.
+Tested common campus questions and improved responses.
 
-[Describe what the team built during the Hack Day and the major functionality or components completed during the event.]
 
 ### Team Contributions
 
-- **[Member Name]:** [Contribution]
-- **[Member Name]:** [Contribution]
-- **[Member Name]:** [Contribution]
-- **[Member Name]:** [Contribution]
+- **[jayithri]:** [Frontend & UI design]
+- **[sahasra]:** [Backend & Flask integration]
+- **[jaya hasini]:** [Gemma AI & knowledge base]
+- **[mihir]:** [Testing, documentation & presentation]
 
 ## Working Application
 
